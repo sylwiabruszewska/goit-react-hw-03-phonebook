@@ -11,7 +11,23 @@ import {
 import { nanoid } from 'nanoid';
 import Notiflix from 'notiflix';
 
+const CONTACTS_LOCAL_STORAGE_KEY = 'contacts';
+
 export class App extends Component {
+  // pobieranie danych z local storage
+  constructor(props) {
+    super(props);
+
+    const storedContacts = localStorage.getItem(CONTACTS_LOCAL_STORAGE_KEY);
+
+    if (!storedContacts) {
+      localStorage.setItem(
+        CONTACTS_LOCAL_STORAGE_KEY,
+        JSON.stringify(this.state.contacts)
+      );
+    }
+  }
+
   state = {
     contacts: [
       { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
@@ -19,9 +35,24 @@ export class App extends Component {
       { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
       { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
     ],
-    name: '',
-    number: '',
     filter: '',
+  };
+
+  // aktualizacja danych w state na podstawie danych w local storage
+  componentDidMount() {
+    const storedContacts = localStorage.getItem(CONTACTS_LOCAL_STORAGE_KEY);
+    if (storedContacts) {
+      this.setState({ contacts: JSON.parse(storedContacts) });
+    }
+  }
+
+  // aktualizacja danych w local storage przy update komponentu
+  componentDidUpdate() {
+    this.updateLocalStorage(this.state.contacts);
+  }
+
+  updateLocalStorage = contacts => {
+    localStorage.setItem(CONTACTS_LOCAL_STORAGE_KEY, JSON.stringify(contacts));
   };
 
   addNewContact = event => {
@@ -43,6 +74,7 @@ export class App extends Component {
       this.setState(prevState => ({
         contacts: [...prevState.contacts, newContact],
       }));
+
       Notiflix.Notify.success('Contact added successfully');
       form.reset();
     } else {
