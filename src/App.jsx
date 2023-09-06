@@ -14,54 +14,37 @@ import Notiflix from 'notiflix';
 const CONTACTS_LOCAL_STORAGE_KEY = 'contacts';
 
 export class App extends Component {
-  // pobieranie danych z local storage
-  constructor(props) {
-    super(props);
-
-    const storedContacts = localStorage.getItem(CONTACTS_LOCAL_STORAGE_KEY);
-
-    if (!storedContacts) {
-      localStorage.setItem(
-        CONTACTS_LOCAL_STORAGE_KEY,
-        JSON.stringify(this.state.contacts)
-      );
-    }
-  }
-
   state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
+    contacts: [],
     filter: '',
   };
 
   // aktualizacja danych w state na podstawie danych w local storage
   componentDidMount() {
     const storedContacts = localStorage.getItem(CONTACTS_LOCAL_STORAGE_KEY);
-    if (storedContacts) {
+    if (storedContacts && storedContacts !== 0) {
       this.setState({ contacts: JSON.parse(storedContacts) });
     }
   }
 
   // aktualizacja danych w local storage przy update komponentu
-  componentDidUpdate() {
-    this.updateLocalStorage(this.state.contacts);
+  componentDidUpdate(_, prevState) {
+    const { contacts } = this.state;
+    if (contacts !== prevState.contacts) {
+      this.updateLocalStorage(contacts);
+    }
+
+    if (contacts.length === 0) {
+      localStorage.removeItem(CONTACTS_LOCAL_STORAGE_KEY);
+    }
   }
 
   updateLocalStorage = contacts => {
-    localStorage.setItem(CONTACTS_LOCAL_STORAGE_KEY, JSON.stringify(contacts));
+    const serializedContacts = JSON.stringify(contacts);
+    localStorage.setItem(CONTACTS_LOCAL_STORAGE_KEY, serializedContacts);
   };
 
-  addNewContact = event => {
-    const form = event.target;
-    const {
-      name: { value: name },
-      number: { value: number },
-    } = form.elements;
-
+  addNewContact = ({ name, number }) => {
     const existingContact = this.checkIfContactExists(name);
 
     if (!existingContact) {
@@ -71,17 +54,22 @@ export class App extends Component {
         number,
       };
 
-      this.setState(prevState => ({
-        contacts: [...prevState.contacts, newContact],
-      }));
+      this.setState(
+        prevState => ({
+          contacts: [...prevState.contacts, newContact],
+        }),
+        () => {
+          localStorage.setItem(
+            CONTACTS_LOCAL_STORAGE_KEY,
+            JSON.stringify(this.state.contacts)
+          );
+        }
+      );
 
       Notiflix.Notify.success('Contact added successfully');
-      form.reset();
     } else {
       Notiflix.Notify.warning(`${name} is already in contacts`);
     }
-
-    event.preventDefault();
   };
 
   checkIfContactExists(name) {
@@ -101,6 +89,11 @@ export class App extends Component {
         contacts: state.contacts.filter(contact => contact.id !== id),
       }));
 
+      localStorage.setItem(
+        CONTACTS_LOCAL_STORAGE_KEY,
+        JSON.stringify(this.state.contacts)
+      );
+
       Notiflix.Notify.success(`${removedContact.name} has been removed`);
     }
   };
@@ -119,7 +112,7 @@ export class App extends Component {
     return (
       <Container>
         <h1>Phonebook</h1>
-        <ContactForm handler={this.addNewContact} />
+        <ContactForm handleAddNewContact={this.addNewContact} />
 
         <Section title="Contacts">
           <FilterInput value={filter} onChange={this.handleFilterChange} />
