@@ -8,7 +8,15 @@ export class Input extends Component {
   };
 
   handleChange = event => {
-    this.setState({ value: event.target.value });
+    const inputValue = event.target.value;
+    this.setState({ value: inputValue });
+
+    if (this.props.onChange) {
+      this.props.onChange({
+        inputName: this.props.name,
+        inputValue: inputValue,
+      });
+    }
   };
 
   isInputValueValid() {
@@ -20,8 +28,8 @@ export class Input extends Component {
   }
 
   render() {
-    const { type, name, pattern, title, placeholder, required } = this.props;
-    const { value } = this.state;
+    const { type, name, pattern, title, placeholder, required, value } =
+      this.props;
 
     const isValid = value === '' || this.isInputValueValid();
     const inputClassName = value !== '' ? (isValid ? 'valid' : 'invalid') : '';
@@ -51,6 +59,6 @@ Input.propTypes = {
   pattern: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
   placeholder: PropTypes.string.isRequired,
-  required: PropTypes.bool,
-  className: PropTypes.string,
+  required: PropTypes.bool.isRequired,
+  value: PropTypes.string.isRequired,
 };
